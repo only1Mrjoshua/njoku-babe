@@ -1,5 +1,12 @@
-// DOM Elements
-const scenes = document.querySelectorAll('.scene');
+// ================= DOM ELEMENTS =================
+const scenes = {
+    scene1: document.getElementById('scene1'),
+    scene2: document.getElementById('scene2'),
+    scene3: document.getElementById('scene3'),
+    scene4: document.getElementById('scene4'),
+    scene5: document.getElementById('scene5')
+};
+
 const buttons = {
     unlock: document.getElementById('unlockBtn'),
     next1: document.getElementById('nextBtn1'),
@@ -11,288 +18,256 @@ const buttons = {
 };
 
 const elements = {
+    newMonthGreeting: document.getElementById('newMonthGreeting'),
     typewriter: document.getElementById('typewriter'),
-    wishesContainer: document.getElementById('wishesContainer'),
+    wishesContainer: document.querySelector('.wishes-container'),
     celebrationText: document.getElementById('celebrationText'),
+    confettiContainer: document.getElementById('confettiContainer'),
     celebrationSound: document.getElementById('celebrationSound'),
-    soundIcon: document.querySelector('.sound-icon'),
-    confettiContainer: document.getElementById('confettiContainer')
+    soundIcon: document.querySelector('.sound-icon')
 };
 
-// Configuration
+// ================= CONFIGURATION =================
 const CONFIG = {
+    herName: "Mon Trésor 💖",
+    myName: "Baby 💕",
+    currentMonth: new Date().toLocaleString('default', { month: 'long' }),
+    typewriterMessages: [],
     wishes: [
-        "Your hardworking spirit that inspires me daily",
-        "How you care for me like a mother would",
-        "The way you carry yourself like a true wife",
-        "Our amazing bonding and connection",
-        "Every moment we spend together",
-        "Your strength and resilience",
-        "The way you make me feel loved"
+        "More moments that take your breath away",
+        "Success in everything you put your heart into",
+        "Protection from all worries and stress",
+        "Unexpected joys that make you smile",
+        "Everything aligning perfectly for you",
+        "Love that grows deeper each day"
     ],
-    typewriterMessages: [
-        "Happy New Month, Mon Tresor ✨",
-        "My beautiful treasure,",
-        "As we welcome this new month together,",
-        "I want you to know how much you mean to me.",
-        "Every day with you feels like a blessing 💖",
-        "I cherish all our moments together.",
-        "Your hardworking nature inspires me.",
-        "You approach everything with dedication,",
-        "and I admire that strength in you.",
-        "When you show that motherly side,",
-        "caring, nurturing, protecting...",
-        "it touches my heart deeply.",
-        "You carry yourself with such grace,",
-        "like the wife you are to me in every way.",
-        "Our bond grows stronger each day.",
-        "I'm grateful for every moment.",
-        "This month, I pray for you...",
-        "May God's favor surround you always.",
-        "May your hard work bear beautiful fruits.",
-        "May your heart find peace.",
-        "May our love continue to grow.",
-        "May you be protected from all harm.",
-        "Happy Sunday, my love 🤍",
-        "May this day bring you rest.",
-        "May you feel God's presence today.",
-        "May your soul find comfort and joy.",
-        "Remember always, Mon Tresor:",
-        "You are loved beyond measure.",
-        "You are appreciated.",
-        "You are my treasure.",
-        "I thank God every day for you.",
-        "I love you more than yesterday,",
-        "but less than tomorrow.",
-        "Forever yours 💕"
-    ]
+    celebrationMessage: ""
 };
 
-// State
+// ================= STATE VARIABLES =================
 let currentScene = 'scene1';
-let isTyping = false;
-let typeIndex = 0;
+let typewriterIndex = 0;
 let charIndex = 0;
-let isSoundOn = false;
+let isTyping = false;
+let isSoundEnabled = false;
 
-// Initialize
+// ================= INITIALIZATION =================
 function init() {
+    CONFIG.typewriterMessages = [
+        `Happy New Month, ${CONFIG.herName} ✨`,
+        "My love for you deepens with every sunrise we witness together.",
+        "I cherish every single moment we spend, whether in laughter or quiet understanding.",
+        "Our connection is something truly special—a bond that feels like home.",
+        "I admire your dedication and how hardworking you are, my love.",
+        "You already carry yourself with such grace and care, like a wife would.",
+        "And when you show that nurturing, protective side, like a mother...",
+        "it makes me fall for you all over again.",
+        "Happy Sunday, my beautiful Mon Trésor 💖",
+        "May today wrap you in tranquility and gentle moments.",
+        "I pray this month brings you profound peace that settles in your soul.",
+        "May divine protection surround you in all you do.",
+        "May you find strength in moments when challenges arise.",
+        "May grace flow abundantly through your life's journey.",
+        "May joy find you in both big celebrations and quiet mornings.",
+        "May God's guidance light your path with wisdom and clarity.",
+        "I love you more than words can fully express.",
+        "You are my heart's deepest desire and greatest blessing.",
+        "With every beat, my soul whispers your name.",
+        "Our journey together is the story I always dreamed of living.",
+        "This new month is another chapter in our beautiful love story.",
+        "Thank you for being exactly who you are.",
+        "For your kindness, your strength, your beautiful heart.",
+        "I'm endlessly grateful for you, Mon Trésor 💕"
+    ];
+
+    CONFIG.celebrationMessage = `My dearest ${CONFIG.herName}, this marks another beautiful month in our journey together. I love you more than yesterday, and I'm filled with excitement for all the beautiful moments ahead with you. Our story keeps getting better, and I can't wait to write every page with you.`;
+
+    document.querySelector('.month-badge').textContent = CONFIG.currentMonth;
+    elements.newMonthGreeting.textContent = `Happy New Month, ${CONFIG.herName}`;
+    buttons.no.disabled = true;
+    buttons.no.style.cursor = 'not-allowed';
+
     setupEventListeners();
-    disableNoButton();
+    toggleSound(false);
+
+    setTimeout(() => {
+        if (currentScene === 'scene2') {
+            typeNextMessage();
+        }
+    }, 1000);
 }
 
-// Event Listeners
+// ================= EVENT LISTENERS =================
 function setupEventListeners() {
     buttons.unlock.addEventListener('click', () => switchScene('scene2'));
     buttons.next1.addEventListener('click', () => switchScene('scene3'));
     buttons.next2.addEventListener('click', () => switchScene('scene4'));
-    buttons.yes.addEventListener('click', handleYes);
-    buttons.no.addEventListener('click', handleNo);
-    buttons.replay.addEventListener('click', resetAll);
-    buttons.soundToggle.addEventListener('click', toggleSound);
-    
-    // Start typing when scene2 becomes active
-    document.addEventListener('sceneChanged', (e) => {
-        if (e.detail.scene === 'scene2') {
-            startTyping();
-        }
-        if (e.detail.scene === 'scene3') {
-            createWishes();
-        }
-    });
+    buttons.yes.addEventListener('click', handleYesClick);
+    buttons.no.addEventListener('click', (e) => e.preventDefault());
+    buttons.replay.addEventListener('click', resetExperience);
+    buttons.soundToggle.addEventListener('click', () => toggleSound(!isSoundEnabled));
+
+    document.addEventListener('click', () => {
+        if (!isSoundEnabled) toggleSound(true);
+    }, { once: true });
 }
 
-// Scene Management
-function switchScene(sceneId) {
-    console.log(`Switching to ${sceneId}`);
-    
-    // Hide all scenes
-    scenes.forEach(scene => {
-        scene.classList.remove('active');
-    });
-    
-    // Show target scene
-    const targetScene = document.getElementById(sceneId);
-    if (targetScene) {
-        targetScene.classList.add('active');
-        currentScene = sceneId;
-        
-        // Dispatch custom event
-        document.dispatchEvent(new CustomEvent('sceneChanged', {
-            detail: { scene: sceneId }
-        }));
+// ================= RESET EXPERIENCE =================
+function resetExperience() {
+    currentScene = 'scene1';
+    typewriterIndex = 0;
+    charIndex = 0;
+    isTyping = false;
+
+    Object.values(scenes).forEach(scene => scene.classList.remove('active'));
+    scenes.scene1.classList.add('active');
+
+    elements.typewriter.innerHTML = '';
+    elements.wishesContainer.innerHTML = '';
+    elements.confettiContainer.innerHTML = '';
+
+    buttons.yes.disabled = false;
+    buttons.no.disabled = true;
+    buttons.no.style.cursor = 'not-allowed';
+
+    elements.celebrationSound.pause();
+    elements.celebrationSound.currentTime = 0;
+}
+
+// ================= SCENE MANAGEMENT =================
+function switchScene(targetScene) {
+    scenes[currentScene].classList.remove('active');
+    scenes[targetScene].classList.add('active');
+    currentScene = targetScene;
+
+    switch (targetScene) {
+        case 'scene2':
+            setTimeout(() => {
+                typewriterIndex = 0;
+                charIndex = 0;
+                elements.typewriter.innerHTML = '';
+                typeNextMessage();
+            }, 500);
+            break;
+        case 'scene3':
+            setTimeout(() => createWishCards(), 500);
+            break;
+        case 'scene4':
+            buttons.no.disabled = true;
+            buttons.no.style.cursor = 'not-allowed';
+            break;
     }
 }
 
-// Typewriter Effect
-function startTyping() {
-    if (isTyping) return;
-    
+// ================= TYPEWRITER EFFECT =================
+function typeNextMessage() {
+    if (typewriterIndex >= CONFIG.typewriterMessages.length) return;
+
     isTyping = true;
-    typeIndex = 0;
-    charIndex = 0;
+    const message = CONFIG.typewriterMessages[typewriterIndex];
     elements.typewriter.innerHTML = '';
-    
-    typeNextLine();
-}
+    charIndex = 0;
 
-function typeNextLine() {
-    if (typeIndex >= CONFIG.typewriterMessages.length) {
-        isTyping = false;
-        return;
-    }
-    
-    const message = CONFIG.typewriterMessages[typeIndex];
-    elements.typewriter.innerHTML = '';
-    charIndex = 0;
-    
     const typeInterval = setInterval(() => {
         if (charIndex < message.length) {
             elements.typewriter.innerHTML += message.charAt(charIndex);
             charIndex++;
         } else {
             clearInterval(typeInterval);
-            typeIndex++;
-            
-            if (typeIndex < CONFIG.typewriterMessages.length) {
-                elements.typewriter.innerHTML += '<br><br>';
-                setTimeout(typeNextLine, 800);
-            } else {
-                isTyping = false;
-            }
+            isTyping = false;
+            typewriterIndex++;
+
+            setTimeout(() => {
+                if (typewriterIndex < CONFIG.typewriterMessages.length) {
+                    elements.typewriter.innerHTML += '<br><br>';
+                    typeNextMessage();
+                }
+            }, 1500);
         }
-    }, 40);
+    }, 50);
 }
 
-// Wishes
-function createWishes() {
+// ================= WISH CARDS =================
+function createWishCards() {
     elements.wishesContainer.innerHTML = '';
-    
+
     CONFIG.wishes.forEach((wish, index) => {
         setTimeout(() => {
             const card = document.createElement('div');
             card.className = 'wish-card';
             card.innerHTML = `<p class="wish-text">${wish}</p>`;
             elements.wishesContainer.appendChild(card);
-            
-            setTimeout(() => {
-                card.classList.add('visible');
-            }, 10);
+            setTimeout(() => card.classList.add('visible'), 10);
         }, index * 300);
     });
 }
 
-// Valentine Yes Handler
-function handleYes() {
-    console.log("YES clicked!");
-    
-    // Disable and change button
+// ================= YES BUTTON HANDLER =================
+function handleYesClick() {
     buttons.yes.disabled = true;
-    buttons.yes.textContent = "YES! 💝";
-    
-    // Play sound if enabled
-    if (isSoundOn) {
+
+    if (isSoundEnabled) {
         elements.celebrationSound.currentTime = 0;
-        elements.celebrationSound.play().catch(e => console.log("Sound error:", e));
+        elements.celebrationSound.play().catch(e => console.log("Audio play failed"));
     }
-    
-    // Create celebration effects
-    createConfetti(100);
-    createHeartEffect();
-    
-    // Set celebration text
-    elements.celebrationText.textContent = "My beautiful Mon Tresor, being your Valentine means the world to me. I promise to cherish you, honor you, and love you more with each passing day. You are my treasure, my love, my everything. I can't wait to create more beautiful memories with you this month and always. I love you endlessly. Yours truly, The love of your life 💕";
-    
-    // Switch to scene5 after 1.5 seconds
+
+    createConfetti(120);
+    createHeartBurst();
+
     setTimeout(() => {
-        console.log("Going to scene5");
+        elements.celebrationText.textContent = CONFIG.celebrationMessage;
         switchScene('scene5');
-    }, 1500);
+    }, 2000);
 }
 
-// Valentine No Handler
-function handleNo(e) {
-    e.preventDefault();
-    // No button is disabled
-}
-
-function disableNoButton() {
-    buttons.no.disabled = true;
-    buttons.no.style.cursor = 'not-allowed';
-}
-
-// Confetti
+// ================= ANIMATIONS =================
 function createConfetti(count) {
+    elements.confettiContainer.innerHTML = '';
+
     for (let i = 0; i < count; i++) {
         setTimeout(() => {
             const confetti = document.createElement('div');
             confetti.className = 'confetti';
-            confetti.style.left = Math.random() * 100 + 'vw';
-            confetti.style.backgroundColor = ['#ff3366', '#ff69b4', '#9370db', '#87ceeb'][Math.floor(Math.random() * 4)];
-            confetti.style.width = Math.random() * 10 + 5 + 'px';
-            confetti.style.height = Math.random() * 10 + 5 + 'px';
-            confetti.style.animation = `confettiFall ${Math.random() * 2 + 2}s linear forwards`;
-            
+            confetti.style.left = `${Math.random() * 100}vw`;
+            const colors = ['#d4af37', '#e6be8a', '#b76e79', '#c9a9a6', '#d8c3a5', '#e8d4c6'];
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            const size = Math.random() * 8 + 4;
+            confetti.style.width = `${size}px`;
+            confetti.style.height = `${size}px`;
+            const duration = Math.random() * 2 + 2;
+            const delay = Math.random() * 1;
+            confetti.style.animation = `confettiFall ${duration}s linear ${delay}s forwards`;
             elements.confettiContainer.appendChild(confetti);
-            
+
             setTimeout(() => {
-                confetti.remove();
-            }, 3000);
-        }, i * 20);
+                if (confetti.parentNode) confetti.remove();
+            }, (duration + delay) * 1000);
+        }, i * 15);
     }
 }
 
-function createHeartEffect() {
+function createHeartBurst() {
     const heart = document.createElement('div');
     heart.innerHTML = '💖';
     heart.style.position = 'fixed';
     heart.style.top = '50%';
     heart.style.left = '50%';
     heart.style.transform = 'translate(-50%, -50%)';
-    heart.style.fontSize = '30px';
+    heart.style.fontSize = '18px';
     heart.style.zIndex = '1000';
-    heart.style.animation = 'pulse 0.5s ease-out';
+    heart.style.pointerEvents = 'none';
+    heart.style.animation = 'heartBurst 1s forwards';
     document.body.appendChild(heart);
-    
-    setTimeout(() => {
-        heart.remove();
-    }, 1000);
+    setTimeout(() => heart.remove(), 1000);
 }
 
-// Sound
-function toggleSound() {
-    isSoundOn = !isSoundOn;
-    elements.soundIcon.textContent = isSoundOn ? '🔊' : '🔇';
+// ================= SOUND MANAGEMENT =================
+function toggleSound(enabled) {
+    isSoundEnabled = enabled;
+    elements.soundIcon.textContent = enabled ? '🔊' : '🔇';
+    buttons.soundToggle.style.background = enabled ? 'rgba(212, 175, 55, 0.2)' : 'rgba(255, 255, 255, 0.1)';
+    buttons.soundToggle.style.borderColor = enabled ? '#d4af37' : 'rgba(255, 255, 255, 0.2)';
 }
 
-// Reset
-function resetAll() {
-    // Reset scenes
-    scenes.forEach(scene => {
-        scene.classList.remove('active');
-    });
-    scenes[0].classList.add('active');
-    currentScene = 'scene1';
-    
-    // Reset elements
-    elements.typewriter.innerHTML = '';
-    elements.wishesContainer.innerHTML = '';
-    elements.confettiContainer.innerHTML = '';
-    
-    // Reset buttons
-    buttons.yes.disabled = false;
-    buttons.yes.textContent = 'YES';
-    disableNoButton();
-    
-    // Reset sound
-    elements.celebrationSound.pause();
-    elements.celebrationSound.currentTime = 0;
-    
-    // Reset state
-    isTyping = false;
-    typeIndex = 0;
-    charIndex = 0;
-}
-
-// Start everything
+// ================= START THE APP =================
 document.addEventListener('DOMContentLoaded', init);
